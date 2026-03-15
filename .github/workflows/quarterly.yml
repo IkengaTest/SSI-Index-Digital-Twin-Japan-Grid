@@ -1,0 +1,28 @@
+name: "Tier 2 — Quarterly ingestion"
+
+on:
+  schedule:
+    - cron: "0 6 1 1,4,7,10 *"   # 1st of Jan/Apr/Jul/Oct at 06:00 UTC
+  workflow_dispatch:
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Run Tier 2
+        env:
+          CDS_API_KEY: ${{ secrets.CDS_API_KEY }}
+          ENTSOE_TOKEN: ${{ secrets.ENTSOE_TOKEN }}
+        run: python run.py --tier 2
+      - name: Commit matrix
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet || git commit -m "chore: tier-2 quarterly update"
+          git push
