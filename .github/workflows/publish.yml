@@ -1,0 +1,24 @@
+name: "Publish matrix to dashboard"
+
+on:
+  # Auto-trigger after ingestion workflows complete
+  workflow_run:
+    workflows: ["Tier 3 — Annual ingestion", "Tier 1 — Monthly ingestion", "Tier 2 — Quarterly ingestion"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_call' || github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Publish
+        env:
+          DASHBOARD_TOKEN: ${{ secrets.DASHBOARD_TOKEN }}
+        run: python publish.py
